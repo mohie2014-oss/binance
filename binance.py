@@ -6,7 +6,7 @@ import time
 # إعدادات الواجهة العريضة لـ Streamlit
 st.set_page_config(layout="wide", page_title="Falcon Live Dashboard")
 st.title("🚀 Falcon Egypt - لوحة تحكم الصيد الرقمي الحية السحابية")
-st.subheader("📊 مسح أونلاين مباشر لعملات باينانس (إصدار الحزم البرمجية الآمن والمستقر 100%)")
+st.subheader("📊 مسح أونلاين مباشر لعملات باينانس (الإصدار الذهبي المستقر والأخير 100%)")
 
 # قائمتك الكاملة المكونة من 448 زوجاً الخاصة بك بدون أي نقص
 MY_BINANCE_COINS = [
@@ -78,12 +78,11 @@ def style_dataframe(df_to_style):
 @st.fragment
 def render_live_dashboard():
     parsed_data = []
-    headers = {"User-Agent": "Mozilla/5.0"}
+    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
     
-    # تقسيم الـ 448 عملة إلى حزم صغيرة جداً (20 عملة) لتأمين الذاكرة السحابية ومنع الـ Expecting Value تماماً
+    # تفتيت البيانات لمجموعات من 20 عملة لحماية استقرار بروتوكول السيرفر السحابي
     chunks = [MY_BINANCE_COINS[i:i + 20] for i in range(0, len(MY_BINANCE_COINS), 20)]
     
-    # الاستعلام الآمن والتجميع التتابعي الخفيف بالسيرفر
     for chunk in chunks:
         try:
             symbols_parameter = "[" + ",".join([f'"{coin}USDT"' for coin in chunk]) + "]"
@@ -119,8 +118,12 @@ def render_live_dashboard():
                         'High_Breakout': "🟢 قمة" if high_breakout else "🔴 عادي",
                         'Breakout': any_breakout
                     })
+            
+            # ⏱️ الفاصل الزمني السحري: تهدئة الطلبات سحابياً لمنع حظر باينانس للحزم
+            time.sleep(0.4)
+            
         except Exception:
-            continue  # تخطي ذكي لأي حزمة فاشلة دون تعليق أو إظهار خطأ أحمر للشاشة
+            continue
 
     df = pd.DataFrame(parsed_data)
     
