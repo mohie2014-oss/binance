@@ -6,7 +6,7 @@ import time
 # إعدادات الواجهة العريضة لـ Streamlit
 st.set_page_config(layout="wide", page_title="Falcon Live Dashboard")
 st.title("🚀 Falcon Egypt - لوحة تحكم الصيد الرقمي الحية السحابية")
-st.subheader("📊 مسح أونلاين مباشر لعملات باينانس (الإصدار الذهبي المستقر والأخير 100%)")
+st.subheader("📊 مسح أونلاين مباشر لعملات باينانس (البوابة السحابية المفتوحة المستقرة 100%)")
 
 # قائمتك الكاملة المكونة من 448 زوجاً الخاصة بك بدون أي نقص
 MY_BINANCE_COINS = [
@@ -77,39 +77,36 @@ def style_dataframe(df_to_style):
 
 @st.fragment
 def render_live_dashboard():
-    parsed_data = []
-    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
-    
-    # تفتيت البيانات لمجموعات من 20 عملة لحماية استقرار بروتوكول السيرفر السحابي
-    chunks = [MY_BINANCE_COINS[i:i + 20] for i in range(0, len(MY_BINANCE_COINS), 20)]
-    
-    for chunk in chunks:
-        try:
-            symbols_parameter = "[" + ",".join([f'"{coin}USDT"' for coin in chunk]) + "]"
-            url = f"https://binance.com{symbols_parameter}"
-            response = requests.get(url, headers=headers, timeout=8)
+    try:
+        headers = {"User-Agent": "Mozilla/5.0"}
+        # جلب البيانات الحية المجمعة من البوابة الدولية الحرة الصالحة سحابياً وبطلب واحد سريع جداً
+        url = "https://coincap.io"
+        response = requests.get(url, headers=headers, timeout=12)
+        
+        if response.status_code == 200:
+            ticker_data = response.json().get('data', [])
+            parsed_data = []
+            target_set = {coin.upper() for coin in MY_BINANCE_COINS}
             
-            if response.status_code == 200:
-                ticker_data = response.json()
-                for item in ticker_data:
-                    symbol_raw = item.get('symbol', '')
-                    coin_base = symbol_raw.replace('USDT', '')
-                    
-                    current_price = float(item.get('lastPrice', 0))
-                    price_change_pct = float(item.get('priceChangePercent', 0))
-                    high_24h = float(item.get('highPrice', 0))
+            for item in ticker_data:
+                symbol_raw = item.get('symbol', '').upper()
+                
+                # مطابقة وفرد البيانات حلياً داخل السيرفر السحابي بأمان كامل
+                if symbol_raw in target_set:
+                    current_price = float(item.get('priceUsd', 0) or 0)
+                    price_change_pct = float(item.get('changePercent24Hr', 0) or 0)
                     
                     pct_1h = price_change_pct / 24.0
                     estimated_rsi = max(0, min(100, 50 + (pct_1h * 3)))
                     rvol_score = round(1.0 + (abs(pct_1h) / 2), 2)
                     
-                    high_breakout = bool(high_24h > 0 and current_price >= high_24h * 0.995)
-                    bb_breakout = bool(pct_1h > 2.0)
-                    ma50_breakout = bool(price_change_pct > 5.0 and pct_1h > 0)
+                    high_breakout = bool(price_change_pct > 6.0)
+                    bb_breakout = bool(pct_1h > 1.9)
+                    ma50_breakout = bool(price_change_pct > 4.5 and pct_1h > 0)
                     any_breakout = high_breakout or bb_breakout or ma50_breakout
                     
                     parsed_data.append({
-                        'Symbol': f"{coin_base}/USDT",
+                        'Symbol': f"{symbol_raw}/USDT",
                         'Price': round(current_price, 6) if current_price < 1 else round(current_price, 4),
                         'RVOL': rvol_score,
                         'RSI': round(estimated_rsi, 2),
@@ -118,38 +115,36 @@ def render_live_dashboard():
                         'High_Breakout': "🟢 قمة" if high_breakout else "🔴 عادي",
                         'Breakout': any_breakout
                     })
-            
-            # ⏱️ الفاصل الزمني السحري: تهدئة الطلبات سحابياً لمنع حظر باينانس للحزم
-            time.sleep(0.4)
-            
-        except Exception:
-            continue
 
-    df = pd.DataFrame(parsed_data)
-    
-    if not df.empty:
-        if show_only_breakouts:
-            df = df[df['Breakout'] == True]
-        df = df[df['RSI'] >= rsi_min]
-        df = df[df['RVOL'] >= rvol_min]
-        
-        if not df.empty and df['Breakout'].any():
-            st.markdown("<audio autoplay src='https://google.com'></audio>", unsafe_allow_html=True)
+            df = pd.DataFrame(parsed_data)
             
-        tab1, tab2 = st.tabs(["🔥 الماسح الفوري والسريع", "📊 لوحة تحكم المؤشرات"])
-        
-        with tab1:
             if not df.empty:
-                df_sorted = df.sort_values('RVOL', ascending=False)
-                st.dataframe(style_dataframe(df_sorted), use_container_width=True)
+                if show_only_breakouts:
+                    df = df[df['Breakout'] == True]
+                df = df[df['RSI'] >= rsi_min]
+                df = df[df['RVOL'] >= rvol_min]
+                
+                if not df.empty and df['Breakout'].any():
+                    st.markdown("<audio autoplay src='https://google.com'></audio>", unsafe_allow_html=True)
+                    
+                tab1, tab2 = st.tabs(["🔥 الماسح الفوري والسريع", "📊 لوحة تحكم المؤشرات"])
+                
+                with tab1:
+                    if not df.empty:
+                        df_sorted = df.sort_values('RVOL', ascending=False)
+                        st.dataframe(style_dataframe(df_sorted), use_container_width=True)
+                    else:
+                        st.info("ℹ️ لا توجد عملات تطابق الفلاتر المحددة حالياً.")
+                with tab2:
+                    st.dataframe(style_dataframe(df), use_container_width=True)
             else:
-                st.info("ℹ️ لا توجد عملات تطابق الفلاتر المحددة حالياً.")
-        with tab2:
-            st.dataframe(style_dataframe(df), use_container_width=True)
-    else:
-        st.warning("⏳ جاري تجميع الحزم وبث الأسعار حياً بالسيرفر... انتظر لحظات.")
+                st.warning("⚠️ جدول البيانات فارغ.")
+        else:
+            st.error(f"❌ خطأ غير متوقع، كود استجابة الخادم: {response.status_code}")
+    except Exception as e:
+        st.error(f"❌ حدث خطأ أثناء فرز ومعالجة الجداول السحابية: {e}")
 
-    # إعادة تحميل وتحديث السكريبت تلقائياً كل دقيقة (60 ثانية)
+    # التحديث التلقائي المستقر كل دقيقة (60 ثانية)
     time.sleep(60)
     st.rerun()
 
