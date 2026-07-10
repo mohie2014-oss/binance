@@ -2,3 +2,5 @@ ccxt
 pandas
 streamlit
 flask
+ccxt
+requests
