@@ -60,22 +60,29 @@ target_symbols = {
 st.sidebar.header("🎯 فلاتر التحكم والتصفية")
 rsi_filter_min = st.sidebar.slider("الحد الأدنى لـ RSI المسموح بعرضه (1 ساعة)", 0, 100, 0)
 
-if st.button("🚀 بدء المسح الفني الشامل للفريمات الأربعة"):
-    with st.spinner("جاري جلب البيانات من كوين جيكو وتصفيتها بدقة..."):
+if st.button("🚀 بدء المسح الفوري للفريمات الأربعة"):
+    with st.spinner("جاري جلب البيانات الفنية اللحظية بأمان..."):
         try:
             all_fetched_coins = []
             
-            # جلب البيانات مباشرة عبر روابط API الأساسية لكوين جيكو بدون مكتبات وسيطة
-            for page in range(1, 4):
-                try:
-                    url = f"https://coingecko.com{page}&price_change_percentage=1h,24h"
-                    headers = {"Accept": "application/json"}
-                    page_data = requests.get(url, headers=headers).json()
-                    if isinstance(page_data, list):
-                        all_fetched_coins.extend(page_data)
-                except:
-                    pass
-                time.sleep(0.5)
+            # إرسال طلب مدمج ومكثف يجلب أعلى 500 عملة في السوق دفعة واحدة لتقليل عدد الطلبات ومنع خطأ الجدول الفارغ
+            headers = {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
+            }
+            
+            url = "https://coingecko.com"
+            response = requests.get(url, headers=headers)
+            if response.status_code == 200:
+                page_data_1 = response.json()
+                if isinstance(page_data_1, list): all_fetched_coins.extend(page_data_1)
+            
+            time.sleep(0.6) # وقت راحة لحماية الاتصال من الـ Rate Limit
+            
+            url_2 = "https://coingecko.com"
+            response_2 = requests.get(url_2, headers=headers)
+            if response_2.status_code == 200:
+                page_data_2 = response_2.json()
+                if isinstance(page_data_2, list): all_fetched_coins.extend(page_data_2)
             
             parsed_data = []
             
@@ -158,9 +165,4 @@ if st.button("🚀 بدء المسح الفني الشامل للفريمات ا
                     
                 with tab4:
                     cols_1d = ['Symbol', 'Price', 'RSI 1D', 'MA50 1D', 'RVOL 1D', 'BB 1D']
-                    st.dataframe(df[cols_1d].sort_values('RVOL 1D', ascending=False), use_container_width=True)
-            else:
-                st.warning("⚠️ جدول البيانات فارغ حالياً، اضغط على زر المسح مرة أخرى.")
-                
-        except Exception as e:
-            st.error(f"❌ حدث خطأ أثناء المعالجة: {e}")
+يُرجى استخدام الرمز البرمجي بحذر.st.dataframe(df[cols_1d].sort_values('RVOL 1D', ascending=False), use_container_width=True)else:st.warning("⚠️ خادم CoinGecko مشغول مؤقتاً بسبب ضغط الطلبات (Rate Limit)، انتظر 10 ثوانٍ ثم اضغط على زر المسح مرة أخرى وسيعمل فوراً.")except Exception as e:st.error(f"❌ حدث خطأ أثناء المعالجة: {e}")
