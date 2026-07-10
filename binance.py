@@ -1,15 +1,11 @@
 import streamlit as st
 import pandas as pd
-from pycoingecko import CoinGeckoAPI
+import requests
 import time
-import numpy as np
 
 # إعدادات الصفحة
 st.set_page_config(layout="wide", page_title="Pro Scalp Dashboard")
 st.title("🚀 Multi-Timeframe Technical Dashboard by Falcon Egypt")
-
-# تهيئة مكتبة CoinGecko الرسمية
-cg = CoinGeckoAPI()
 
 # قائمة جميع الـ 448 عملة الخاصة بك بدقة عالية ومطابقة برمجية
 target_symbols = {
@@ -65,32 +61,32 @@ st.sidebar.header("🎯 فلاتر التحكم والتصفية")
 rsi_filter_min = st.sidebar.slider("الحد الأدنى لـ RSI المسموح بعرضه (1 ساعة)", 0, 100, 0)
 
 if st.button("🚀 بدء المسح الفني الشامل للفريمات الأربعة"):
-    with st.spinner("جاري سحب بيانات الشموع التاريخية لكل فريم فني بدقة..."):
+    with st.spinner("جاري جلب البيانات من كوين جيكو وتصفيتها بدقة..."):
         try:
             all_fetched_coins = []
             
-            try:
-                page_data_1 = cg.get_coins_markets(vs_currency='usd', order='market_cap_desc', per_page=250, page=1, price_change_percentage='1h,24h')
-                if page_data_1: all_fetched_coins.extend(page_data_1)
-            except:
-                pass
-                
-            try:
-                time.sleep(0.4)
-                page_data_2 = cg.get_coins_markets(vs_currency='usd', order='market_cap_desc', per_page=250, page=2, price_change_percentage='1h,24h')
-                if page_data_2: all_fetched_coins.extend(page_data_2)
-            except:
-                pass
+            # جلب البيانات مباشرة عبر روابط API الأساسية لكوين جيكو بدون مكتبات وسيطة
+            for page in range(1, 4):
+                try:
+                    url = f"https://coingecko.com{page}&price_change_percentage=1h,24h"
+                    headers = {"Accept": "application/json"}
+                    page_data = requests.get(url, headers=headers).json()
+                    if isinstance(page_data, list):
+                        all_fetched_coins.extend(page_data)
+                except:
+                    pass
+                time.sleep(0.5)
             
             parsed_data = []
             
-            for counter, c in enumerate(all_fetched_coins):
+            for c in all_fetched_coins:
                 coin_symbol = (c.get('symbol', '')).lower()
                 
                 if coin_symbol not in target_symbols:
                     continue
                 
                 current_price = c.get('current_price', 0)
+                if current_price is None: current_price = 0
                 
                 pct_1h = c.get('price_change_percentage_1h_in_currency', 0) or 0
                 pct_24h = c.get('price_change_percentage_24h_in_currency', 0) or 0
@@ -164,7 +160,7 @@ if st.button("🚀 بدء المسح الفني الشامل للفريمات ا
                     cols_1d = ['Symbol', 'Price', 'RSI 1D', 'MA50 1D', 'RVOL 1D', 'BB 1D']
                     st.dataframe(df[cols_1d].sort_values('RVOL 1D', ascending=False), use_container_width=True)
             else:
-                st.warning("⚠️ لا توجد عملات تطابق الفلاتر الحالية.")
+                st.warning("⚠️ جدول البيانات فارغ حالياً، اضغط على زر المسح مرة أخرى.")
                 
         except Exception as e:
-            st.error(f"❌ حدث خطأ غير متوقع أثناء المعالجة الفنية: {e}")
+            st.error(f"❌ حدث خطأ أثناء المعالجة: {e}")
