@@ -4,3 +4,4 @@ streamlit
 flask
 ccxt
 requests
+coingecko
